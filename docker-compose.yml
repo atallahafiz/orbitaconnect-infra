@@ -1,0 +1,106 @@
+services:
+  # --- DATA LAYER ---
+  postgres:
+    image: postgres:15-alpine
+    container_name: ota-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - private_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # --- APP LAYER (Custom Build for Bagisto) ---
+  app:
+    build: .
+    container_name: ota-app
+    volumes:
+      - ./app-bagisto:/var/www/html
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: "pgsql://${DB_USER}:${DB_PASS}@${POSTGRES_HOST}:${POSTGRES_PORT}/${DB_NAME}"
+    networks:
+      - private_net
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+  # --- WEB LAYER ---
+  web:
+    image: nginx:alpine
+    container_name: ota-web
+    ports:
+      - "${APP_PORT}:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - app
+    networks:
+      - private_net
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+  # --- MANAGEMENT LAYER (SSH Bastion Simulation) ---
+  ssh-bastion:
+    image: linuxserver/openssh-server:latest
+    container_name: ota-ssh
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - USER_NAME=devuser
+      - PUBLIC_KEY_DIR=/config/.ssh
+      - SUDO_ACCESS=true
+      - PASSWORD_ACCESS=false
+    volumes:
+      - ./ssh-keys:/config/.ssh
+    ports:
+      - "2222:2222"
+    networks:
+      - private_net
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+  # --- APPLICATION LAYER (Mini API) ---
+  mini-api:
+    build: ./ota-mini-api
+    container_name: ota-mini-api
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: "postgresql://${DB_USER}:${DB_PASS}@postgres:5432/${DB_NAME}"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - private_net
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          
+volumes:
+  db_data:
+
+networks:
+  private_net:
+    driver: bridge
