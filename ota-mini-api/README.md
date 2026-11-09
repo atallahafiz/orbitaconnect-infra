@@ -1,81 +1,38 @@
-# OrbitaConnect: Guest & Supplier Mini API
+# 🏨 OrbitaConnect
 
-API sederhana untuk integrasi aplikasi OTA dengan cloud infrastructure.  
-Fokus: **Supplier Ingest** + **Guest View** menggunakan FastAPI + PostgreSQL.
+A secure, scalable 3-tier AWS cloud architecture for a hotel management API, built with a Defense-in-Depth security model.
 
----
+**Architecture:** Internet → ALB + AWS WAF → EC2 Auto Scaling (Private Subnet) → RDS PostgreSQL (Private Subnet)
 
-## Struktur Project
+## Tech Stack
 
-```
-ota-mini-api/
-├── main.py              # Semua endpoint API (FastAPI)
-├── schema.sql           # Skema database PostgreSQL
-├── requirements.txt     # Dependency Python
-├── .env.example         # Template konfigurasi
-├── docs/
-│   └── API_SIMPLE.md    # Dokumentasi endpoint + contoh curl
-└── README.md            # File ini
-```
+- **Cloud:** AWS (EC2, RDS, ALB, VPC, WAF, Secrets Manager, CloudWatch, ACM)
+- **Backend:** Python, FastAPI
+- **Database:** PostgreSQL (RDS)
+- **Frontend:** HTML, CSS, JavaScript
 
----
+## Security
 
-## Cara Setup (5 Menit)
+- Private Subnets (no public IP for app & DB)
+- AWS WAF (19 rules: SQLi, XSS, OWASP Top 10)
+- AWS Secrets Manager (no hardcoded credentials)
+- HTTPS/TLS 1.3 encryption
+- Bastion Host + Session Manager access
 
-### 1. Install dependency
-```bash
-pip install -r requirements.txt
-```
+## API Endpoints
 
-### 2. Setup database
-```bash
-# Jalankan schema di database PostgreSQL kalian
-psql -h ota-db -U ota_db_user -d orbitaconnect -f schema.sql
-```
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | /health | Health check |
+| GET | /hotels | List hotels |
+| POST | /ingest | Create hotel |
+| PUT | /hotels/{id} | Update hotel |
+| DELETE | /hotels/{id} | Delete hotel |
 
-### 3. Konfigurasi .env
-```bash
-cp .env.example .env
-# Edit DATABASE_URL sesuai koneksi kalian
-```
+## Monitoring
 
-### 4. Jalankan API
-```bash
-# Set env variable dulu
-export DATABASE_URL="postgresql://ota_db_user:SecureP@ss2026!@ota-db:5432/orbitaconnect"
-
-# Jalankan server
-uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-```
-
-### 5. Buka dokumentasi interaktif
-```
-http://localhost:8000/docs
-```
+- CloudWatch Dashboard (CPU, Requests, DB Connections)
+- Automated alarm: CPU > 70%
 
 ---
-
-## Endpoint Tersedia
-
-| Method | Path       | Siapa     | Fungsi                        |
-|--------|------------|-----------|-------------------------------|
-| POST   | `/ingest`  | Supplier  | Kirim data hotel, harga, stok |
-| GET    | `/hotels`  | Guest     | Lihat hotel & harga           |
-| GET    | `/health`  | System    | Cek koneksi database          |
-
----
-
-## Fitur Utama
-
-- **Idempotent**: kirim data yang sama berkali-kali → tidak error, tidak duplikat
-- **Upsert Hotel**: hotel diperbarui jika sudah ada (berdasarkan supplier_id + external_id)
-- **Rate**: hanya di-insert jika belum ada (tidak menimpa harga lama)
-- **Availability**: selalu diperbarui dengan stok terbaru
-- **Filter tanggal**: `GET /hotels?date=2026-06-15` untuk cari yang tersedia
-
----
-
-## Dokumentasi Lengkap
-
-Lihat `docs/API_SIMPLE.md` untuk contoh request/response dan perintah curl lengkap.
----test---2 test---
+wickedanabella!
