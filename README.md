@@ -1,76 +1,38 @@
-# OrbitaConnect Infrastructure
+# 🏨 OrbitaConnect
 
-![Docker](https://img.shields.io/badge/Docker-Docker%20Compose-2496ED?style=flat-square&logo=docker&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=flat-square&logo=fastapi&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-4169E1?style=flat-square&logo=postgresql&logoColor=white)
-![Nginx](https://img.shields.io/badge/Nginx-009639?style=flat-square&logo=nginx&logoColor=white)
+A secure, scalable 3-tier AWS cloud architecture for a hotel management API, built with a Defense-in-Depth security model.
 
-OrbitaConnect adalah platform infrastruktur *hybrid* (IaaS/PaaS) berbasis kontainer yang mengintegrasikan **FastAPI** dan **PostgreSQL** untuk simulasi ekosistem *Online Travel Agency* (OTA). Proyek ini berfokus pada otomatisasi *deployment*, isolasi jaringan, dan pengamanan data.
+**Architecture:** Internet → ALB + AWS WAF → EC2 Auto Scaling (Private Subnet) → RDS PostgreSQL (Private Subnet)
 
----
+## Tech Stack
 
-## ✨ Fitur Utama
+- **Cloud:** AWS (EC2, RDS, ALB, VPC, WAF, Secrets Manager, CloudWatch, ACM)
+- **Backend:** Python, FastAPI
+- **Database:** PostgreSQL (RDS)
+- **Frontend:** HTML, CSS, JavaScript
 
-* ⚡ **One-Command Deployment:** Manajemen *lifecycle* kontainer sepenuhnya diotomatisasi menggunakan perintah `make`.
-* 🛡️ **Network Isolation:** Database PostgreSQL terisolasi penuh di dalam Docker `private_net`, hanya bisa diakses oleh backend dan **SSH Bastion** (Key-based auth via Ed25519).
-* 🔒 **Least Privilege Access:** Kontainer aplikasi berjalan dengan user non-root (`appuser`) untuk meminimalisir celah keamanan.
-* 💾 **Disaster Recovery:** Tersedia skrip otomatisasi untuk proses *backup* dan *restore* database secara instan.
+## Security
 
----
+- Private Subnets (no public IP for app & DB)
+- AWS WAF (19 rules: SQLi, XSS, OWASP Top 10)
+- AWS Secrets Manager (no hardcoded credentials)
+- HTTPS/TLS 1.3 encryption
+- Bastion Host + Session Manager access
 
-## 🚀 Memulai (Quick Start)
+## API Endpoints
 
-### Prasyarat
-* Docker Desktop (Terintegrasi dengan WSL2 Ubuntu)
-* `make` utilitas terinstal di Linux/WSL
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | /health | Health check |
+| GET | /hotels | List hotels |
+| POST | /ingest | Create hotel |
+| PUT | /hotels/{id} | Update hotel |
+| DELETE | /hotels/{id} | Delete hotel |
 
-### Langkah Instalasi
+## Monitoring
 
-1. **Clone Repositori & Masuk ke Folder**
-   ```bash
-   git clone [https://github.com/username/orbitaconnect-infra.git](https://github.com/username/orbitaconnect-infra.git)
-   cd orbitaconnect-infra
-   ```
-
-2. **Setup Environment Variables**
-   ```bash
-   cp .env.example .env
-   ```
-
-3. **Jalankan Seluruh Environment**
-   ```bash
-   make up
-   ```
+- CloudWatch Dashboard (CPU, Requests, DB Connections)
+- Automated alarm: CPU > 70%
 
 ---
-
-## 🧪 Pengujian API
-
-Setelah semua kontainer berjalan dan berstatus `Healthy`, Anda bisa menguji endpoint utama via Terminal:
-
-* **Cek Koneksi Sistem & DB:**
-  ```bash
-  curl http://localhost:8000/health
-  ```
-
-* **Simulasi Ingest Data (Supplier):**
-  ```bash
-  curl -X POST http://localhost:8000/ingest \
-    -H "Content-Type: application/json" \
-    -d '{"supplier_id":"SUP-001","external_hotel_id":"HTL-01","name":"Grand Hotel","rates":[],"availability":[]}'
-  ```
-
-🔗 **Dokumentasi UI:** Akses [http://localhost:8000/docs](http://localhost:8000/docs) untuk mencoba Swagger UI interaktif.
-
----
-
-## 📂 Struktur Repositori
-
-```text
-├── docker-compose.yml   # Orkestrasi container (Infra, API, Proxy)
-├── Makefile             # CLI automation (make up, make down, make backup, dll)
-├── ota-mini-api/        # Source code aplikasi FastAPI
-├── postgres/            # Skema inisialisasi awal database
-├── scripts/             # Shell scripts untuk backup & provisioning
-└── ssh-keys/            # Kredensial keamanan untuk SSH Bastion
-```
+*wickedanabella!*
