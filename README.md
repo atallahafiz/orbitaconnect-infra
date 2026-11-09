@@ -1,4 +1,4 @@
-# 🏨 OrbitaConnect
+# OrbitaConnect
 
 A secure, scalable 3-tier AWS cloud architecture for a hotel management API, built with a Defense-in-Depth security model.
 
